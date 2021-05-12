@@ -1,0 +1,35 @@
+{
+  "name": "@coreyauger/akkaserverless-typescript-template",
+  "version": "0.1.0",
+  "description": "Template for Akka Serverless Beta - Value Entity Service",
+  "license": "MIT",
+  "main": "./app/index.js",
+  "author": {
+    "name": "coreyauger"
+  },
+  "scripts": {
+    "pretest": "compile-descriptor ./proto/domain.proto ",
+    "build": "compile-descriptor ./proto/domain.proto && rm -rf ./app && tsc",
+    "start": "node ./app/index.js",
+    "lint": "eslint src/**/*.ts",
+    "container:build": "docker build . -t YOUR-DOCKER-REPO/THIS-DOCKER-IMAGE:$npm_package_version",
+    "container:push": "docker push YOUR-DOCKER-REPO/THIS-DOCKER-IMAGE:$npm_package_version",
+    "devmode:network:create": "docker network create -d bridge akkasls",
+    "devmode:network:destroy": "docker network rm akkasls",
+    "devmode:proxy:start": "docker run --rm -it --name proxy --network akkasls -p 9000:9000 --env USER_FUNCTION_HOST=userfunction gcr.io/akkaserverless-public/akkaserverless-proxy:0.7.0-beta.6 -Dconfig.resource=dev-mode.conf -Dcloudstate.proxy.protocol-compatibility-check=false",
+    "devmode:proxy:stop": "docker stop proxy && docker rm proxy",
+    "devmode:container:start": "docker run --rm -it --name userfunction --hostname userfunction --network akkasls YOUR-DOCKER-REPO/THIS-DOCKER-IMAGE:$npm_package_version",
+    "devmode:container:stop": "docker stop userfunction && docker rm userfunction"
+  },
+  "dependencies": {
+    "@grpc/proto-loader": "^0.5.5",
+    "@lightbend/akkaserverless-javascript-sdk": "^0.7.0-beta.6",
+    "google-protobuf": "^3.14.0",
+    "grpc": "^1.24.9"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "eslint": "^7.24.0",
+    "typescript": "^4.1.3"
+  }
+}

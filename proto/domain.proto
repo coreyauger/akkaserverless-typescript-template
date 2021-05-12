@@ -1,0 +1,118 @@
+/**
+ * Copyright 2021 Lightbend Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Specify the version of the Protobuf syntax
+ */
+syntax = "proto3";
+
+/**
+  * Packages prevent name clashes between protocol messages
+  */
+package com.coreyauger.akkaserverless.typescript;
+
+/**
+ * Imports allow you to use definitions from other protobuf files.
+ */
+import "akkaserverless/annotations.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+/**
+ * Example object to store details on a person
+ */
+message PersonDetails {
+    string id = 1 [(.akkaserverless.field).entity_key = true];    
+    string name = 3;
+    string type = 4;
+    string companyId = 5;
+    string email = 7;    
+}
+
+/**
+ * The GetPersonDetailsRequest message represents a request to get the
+ * current details for a person. 
+ */
+message GetPersonDetailsRequest {
+    string id = 1 [(.akkaserverless.field).entity_key = true];
+}
+
+/**
+ * The GetPersonDetailsByCompanyRequest message represents a request to get the
+ * current details for all person in a company. 
+ */
+message GetPersonDetailsByCompanyRequest {
+    string id = 1;
+}
+
+service PersonService {
+    /**
+     * The entity type determines what kind of prefix entities get
+     * when persisted
+     */
+    option (.akkaserverless.service).entity.type = ".persistence.Person";
+
+    rpc AddPersonDetails(PersonDetails) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/person/{id}"
+            body: "*"
+        };
+    }
+}
+
+service PersonDetailsService {
+    rpc UpdatePerson(PersonDetails) returns (PersonDetails) {
+        option (.akkaserverless.method).eventing = {
+            in: {
+                value_entity: "person" // this is the entity type
+            }
+        };
+        option (.akkaserverless.method).view.update = {
+            table: "person"
+        };
+    }
+
+    rpc GetPersonDetails(GetPersonDetailsRequest) returns (stream PersonDetails) {
+        option (.akkaserverless.method).view.query = {
+            query: "SELECT * FROM person WHERE id = :id"
+        };
+        option (google.api.http) = {
+            get: "/person/id"
+        };
+    }
+}
+
+service CompanyPersonDetailsService {
+    rpc UpdatePerson(PersonDetails) returns (PersonDetails) {
+        option (.akkaserverless.method).eventing = {
+            in: {
+                value_entity: "person" // this is the entity type
+            }
+        };
+        option (.akkaserverless.method).view.update = {
+            table: "companyperson"
+        };
+    }
+
+    rpc GetPersonDetailsByCompany(GetPersonDetailsByCompanyRequest) returns (stream PersonDetails) {
+        option (.akkaserverless.method).view.query = {
+            query: "SELECT * FROM companyperson WHERE companyId = :id"
+        };
+        option (google.api.http) = {
+            get: "/person/company"
+        };
+    }
+}
