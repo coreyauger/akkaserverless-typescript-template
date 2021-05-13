@@ -7,12 +7,9 @@ FROM node:14.14.0-buster AS builder
 # Set the working directory
 WORKDIR /home/node
 
-# Install app dependencies
-COPY package*.json ./
-RUN npm ci
-
 # Copy sources and build the app
 COPY . .
+RUN npm ci
 RUN npm run build
 
 # Remove dev packages
